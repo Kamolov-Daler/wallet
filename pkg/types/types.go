@@ -25,6 +25,7 @@ type Payment struct {
 	Status    PaymentStatus
 }
 
+// Phone телефон пользователя
 type Phone string
 
 // Account представляет информацию о счёте пользователя.
