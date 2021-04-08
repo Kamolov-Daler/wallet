@@ -17,7 +17,6 @@ func TestService_FindAccountById_found(t *testing.T) {
 	}
 
 	result, err := svc.FindAccountByID(1)
-
 	expected := &types.Account{
 		ID:      1,
 		Phone:   "+992000000001",
