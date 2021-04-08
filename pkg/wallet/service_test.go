@@ -5,11 +5,32 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Kamolov-Daler/wallet/pkg/wallet"
+	"github.com/Kamolov-Daler/wallet/pkg/types"
 )
 
-func TestService_FindAccountById_find(t *testing.T) {
-	svc := &wallet.Service{}
+func TestService_FindAccountById_found(t *testing.T) {
+	svc := Service{}
+	_, err := svc.RegisterAccount("+992000000001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	result, err := svc.FindAccountByID(1)
+
+	expected := &types.Account{
+		ID:      1,
+		Phone:   "+992000000001",
+		Balance: 0,
+	}
+
+	if !reflect.DeepEqual(expected, result) {
+		t.Errorf("invalid result, expected: %v, actual: %v", expected, result)
+	}
+}
+
+func TestService_FindAccountById_NotFound(t *testing.T) {
+	svc := Service{}
 	_, err := svc.RegisterAccount("+992000000001")
 	if err != nil {
 		fmt.Println(err)
@@ -18,10 +39,7 @@ func TestService_FindAccountById_find(t *testing.T) {
 
 	result, err := svc.FindAccountByID(3)
 
-	expected, err := "account not found", nil
-
-	if !reflect.DeepEqual(expected, result) {
-		t.Errorf("invalid result, expected: %v, actual: %v", expected, result)
+	if result != nil {
+		t.Error("result nil!")
 	}
-
 }
