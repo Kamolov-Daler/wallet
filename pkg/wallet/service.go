@@ -194,7 +194,7 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 
 	account, err := s.FindAccountByID(targetFavorite.AccountID)
 	if err != nil {
-		return nil, ErrAccountNotFound
+		return nil, ErrFavoriteNotFound
 	}
 	account.Balance -= targetFavorite.Amount
 	newPaymentID := uuid.New().String()
