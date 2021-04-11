@@ -13,24 +13,32 @@ type testService struct {
 	*Service
 }
 
+type testPayment struct {
+	ID        string
+	AccountID int64
+	Amount    types.Money
+	Category  types.PaymentCategory
+	Status    types.PaymentStatus
+}
+
 type testAccount struct {
 	phone    types.Phone
 	balance  types.Money
-	payments []struct {
-		amount   types.Money
-		category types.PaymentCategory
-	}
+	payments []testPayment
+}
+
+var defaultTestPayment = testPayment{
+	ID:        uuid.New().String(),
+	AccountID: 1,
+	Amount:    1_000_00,
+	Category:  "auto",
+	Status:    types.PaymentStatusInProgress,
 }
 
 var defaultTestAccount = testAccount{
-	phone:   "+992000000001",
-	balance: 10_000_00,
-	payments: []struct {
-		amount   types.Money
-		category types.PaymentCategory
-	}{
-		{amount: 1_000_00, category: "auto"},
-	},
+	phone:    "+992000000001",
+	balance:  10_000_00,
+	payments: []testPayment{defaultTestPayment},
 }
 
 func (s *testService) addAccount(data testAccount) (*types.Account, []*types.Payment, error) {
@@ -51,7 +59,7 @@ func (s *testService) addAccount(data testAccount) (*types.Account, []*types.Pay
 	payments := make([]*types.Payment, len(data.payments))
 	for i, payment := range data.payments {
 		// тогда здесь работаем просто через index, а не через append
-		payments[i], err = s.Pay(account.ID, payment.amount, payment.category)
+		payments[i], err = s.Pay(account.ID, payment.Amount, payment.Category)
 		if err != nil {
 			return nil, nil, fmt.Errorf("can't make payment, error = %v", err)
 		}
