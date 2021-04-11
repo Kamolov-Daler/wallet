@@ -13,24 +13,32 @@ type testService struct {
 	*Service
 }
 
+type testPayment struct {
+	ID        string
+	AccountID int64
+	Amount    types.Money
+	Category  types.PaymentCategory
+	Status    types.PaymentStatus
+}
+
 type testAccount struct {
 	phone    types.Phone
 	balance  types.Money
-	payments []struct {
-		amount   types.Money
-		category types.PaymentCategory
-	}
+	payments []testPayment
+}
+
+var defaultTestPayment = testPayment{
+	ID:        uuid.New().String(),
+	AccountID: 1,
+	Amount:    1_000_00,
+	Category:  "auto",
+	Status:    types.PaymentStatusInProgress,
 }
 
 var defaultTestAccount = testAccount{
-	phone:   "+992000000001",
-	balance: 10_000_00,
-	payments: []struct {
-		amount   types.Money
-		category types.PaymentCategory
-	}{
-		{amount: 1_000_00, category: "auto"},
-	},
+	phone:    "+992000000001",
+	balance:  10_000_00,
+	payments: []testPayment{defaultTestPayment},
 }
 
 func (s *testService) addAccount(data testAccount) (*types.Account, []*types.Payment, error) {
@@ -51,7 +59,7 @@ func (s *testService) addAccount(data testAccount) (*types.Account, []*types.Pay
 	payments := make([]*types.Payment, len(data.payments))
 	for i, payment := range data.payments {
 		// тогда здесь работаем просто через index, а не через append
-		payments[i], err = s.Pay(account.ID, payment.amount, payment.category)
+		payments[i], err = s.Pay(account.ID, payment.Amount, payment.Category)
 		if err != nil {
 			return nil, nil, fmt.Errorf("can't make payment, error = %v", err)
 		}
@@ -178,8 +186,16 @@ func TestService_Repeat_success(t *testing.T) {
 		t.Errorf("Repeat(): can't repeat pay = %v", err)
 		return
 	}
+	if repeatPay.ID == payment.ID {
+		t.Errorf("repeat payment ID is not payment ID = %v", repeatPay)
+		return
+	}
 	if repeatPay.Amount != payment.Amount {
 		t.Errorf("repeat payment amount is not payment amount = %v", repeatPay)
+		return
+	}
+	if repeatPay.Category != payment.Category {
+		t.Errorf("repeat payment category is not payment category = %v", repeatPay)
 		return
 	}
 	if repeatPay.Status != payment.Status {
@@ -213,4 +229,116 @@ func TestService_Repeat_fail(t *testing.T) {
 		t.Errorf("Repeat payment is ok")
 		return
 	}
+}
+
+func TestService_FavoritePayment_success(t *testing.T) {
+	s := newTestService()
+	_, payments, err := s.addAccount(defaultTestAccount)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	payment := payments[0]
+	favorite, err := s.FavoritePayment(payment.ID, "buy")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if favorite.AccountID != payment.AccountID {
+		t.Errorf("FavoritePayment(): favorite account ID is not payment account ID")
+		return
+	}
+
+	if favorite.Category != payment.Category {
+		t.Errorf("FavoritePayment(): favorite category is not payment category")
+		return
+	}
+
+	if favorite.Amount != payment.Amount {
+		t.Errorf("FavoritePayment(): favorite amount is not payment amount")
+		return
+	}
+}
+
+func TestService_FavoritePayment_fail(t *testing.T) {
+	s := newTestService()
+	_, payments, err := s.addAccount(defaultTestAccount)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if payments == nil {
+		return
+	}
+	favorite, err := s.FavoritePayment("asdsad", "buy")
+	if err != nil {
+		t.Errorf("Invalid favorite payment.")
+		return
+	}
+
+	if favorite == nil {
+		t.Errorf("Invalid favorite payment.")
+		return
+	}
+}
+
+func TestService_PayFromFavorite_success(t *testing.T) {
+	s := newTestService()
+	_, payments, err := s.addAccount(defaultTestAccount)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	payment := payments[0]
+	favorite, err := s.FavoritePayment(payment.ID, "buy")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	payFavorite, err := s.PayFromFavorite(favorite.ID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if payFavorite.AccountID != favorite.AccountID {
+		t.Errorf("FavoritePayment(): favorite account ID is not payment account ID")
+		return
+	}
+	if payFavorite.Amount != favorite.Amount {
+		t.Errorf("FavoritePayment(): favorite amount is not payment amount")
+		return
+	}
+	if payFavorite.Category != favorite.Category {
+		t.Errorf("FavoritePayment(): favorite category is not payment category")
+		return
+	}
+}
+
+func TestService_PayFromFavorite_fail(t *testing.T) {
+	s := newTestService()
+	_, payments, err := s.addAccount(defaultTestAccount)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	payment := payments[0]
+	_, err = s.FavoritePayment(payment.ID, "buy")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	_, err = s.PayFromFavorite("asdasdasd")
+	if err == nil {
+		t.Error(err)
+		return
+	}
+
 }
