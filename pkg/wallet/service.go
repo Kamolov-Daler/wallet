@@ -103,33 +103,51 @@ func (s *Service) FindAccountByID(accountID int64) (*types.Account, error) {
 }
 
 func (s *Service) FindPaymentByID(paymentID string) (*types.Payment, error) {
-	findPayment := &types.Payment{}
-
 	for _, payment := range s.payments {
 		if paymentID == payment.ID {
-			findPayment = payment
-			return findPayment, nil
+			return payment, nil
 		}
 	}
+
 	return nil, ErrPaymentNotFound
 }
 
 func (s *Service) Reject(paymentID string) error {
-	paymentBalance := types.Money(0)
-
+	var targetPayment *types.Payment
 	for _, payment := range s.payments {
-		if paymentID == payment.ID {
-			payment.Status = types.PaymentStatusFail
-			paymentBalance = payment.Amount
-			payment.Amount = 0
-			for _, account := range s.accounts {
-				if account.ID == payment.AccountID {
-					account.Balance += paymentBalance
-					return nil
-				}
-			}
+		if payment.ID == paymentID {
+			targetPayment = payment
+			break
 		}
 	}
+	if targetPayment == nil {
+		return ErrPaymentNotFound
+	}
 
-	return ErrPaymentNotFound
+	account, err := s.FindAccountByID(targetPayment.AccountID)
+	if err != nil {
+		return err
+	}
+
+	targetPayment.Status = types.PaymentStatusFail
+	account.Balance += targetPayment.Amount
+	return nil
+}
+
+func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
+	payment, err := s.FindPaymentByID(paymentID)
+	if err != nil {
+		return nil, ErrPaymentNotFound
+	}
+
+	newPaymentID := uuid.New().String()
+	newPayment := &types.Payment{
+		ID:        newPaymentID,
+		AccountID: payment.AccountID,
+		Amount:    payment.Amount,
+		Category:  payment.Category,
+		Status:    types.PaymentStatusInProgress,
+	}
+	s.payments = append(s.payments, newPayment)
+	return payment, nil
 }
