@@ -335,9 +335,14 @@ func TestService_PayFromFavorite_fail(t *testing.T) {
 		return
 	}
 
-	_, err = s.PayFromFavorite("asdasdasd")
+	payFavorite, err := s.PayFromFavorite("asdasdasd")
 	if err == nil {
 		t.Error(err)
+		return
+	}
+
+	if payFavorite != nil {
+		t.Errorf("invalid favorite")
 		return
 	}
 
