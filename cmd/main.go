@@ -14,7 +14,7 @@ func main() {
 		return
 	}
 
-	err = svc.Deposit(account.ID, 10)
+	err = svc.Deposit(account.ID, 1000)
 	if err != nil {
 		switch err {
 		case wallet.ErrAmountMustBePosititve:
@@ -24,9 +24,14 @@ func main() {
 		}
 		return
 	}
-	acc, err := svc.FindAccountByID(account.ID)
-	if err != nil {
-		fmt.Println(err)
+
+	payment, err := svc.Pay(account.ID, 10, "mobile")
+
+	if payment == nil {
+		return
 	}
-	fmt.Println(acc)
+
+	pay := svc.Reject(payment.ID)
+
+	fmt.Println(pay)
 }
