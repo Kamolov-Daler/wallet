@@ -190,6 +190,10 @@ func TestService_Repeat_success(t *testing.T) {
 		t.Errorf("repeat payment amount is not payment amount = %v", repeatPay)
 		return
 	}
+	if repeatPay.Category != payment.Category {
+		t.Errorf("repeat payment category is not payment category = %v", repeatPay)
+		return
+	}
 	if repeatPay.Status != payment.Status {
 		t.Errorf("repeat payment status is not payment status = %v", repeatPay)
 		return
