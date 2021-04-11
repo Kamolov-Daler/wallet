@@ -157,24 +157,18 @@ func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
 }
 
 func (s *Service) FavoritePayment(paymentID string, name string) (*types.Favorite, error) {
-	targetPayment := &types.Payment{}
-	for _, payment := range s.payments {
-		if payment.ID == paymentID {
-			targetPayment = payment
-		}
-	}
-
-	if targetPayment == nil {
+	payment, err := s.FindPaymentByID(paymentID)
+	if err != nil {
 		return nil, ErrPaymentNotFound
 	}
 
 	newFavoriteID := uuid.New().String()
 	favorite := &types.Favorite{
 		ID:        newFavoriteID,
-		AccountID: targetPayment.AccountID,
+		AccountID: payment.AccountID,
 		Name:      name,
-		Amount:    targetPayment.Amount,
-		Category:  targetPayment.Category,
+		Amount:    payment.Amount,
+		Category:  payment.Category,
 	}
 	s.favorites = append(s.favorites, favorite)
 	return favorite, nil

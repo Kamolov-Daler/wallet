@@ -273,13 +273,13 @@ func TestService_FavoritePayment_fail(t *testing.T) {
 	if payments == nil {
 		return
 	}
-	favorite, err := s.FavoritePayment("asdsad", "buy")
-	if err != nil {
-		t.Errorf("Invalid favorite payment.")
+	favorite, err := s.FavoritePayment("asdasdasdjskldjklasjdjl", "buy")
+	if err == nil {
+		t.Error("Invalid favorite payment.", favorite)
 		return
 	}
 
-	if favorite == nil {
+	if favorite != nil {
 		t.Errorf("Invalid favorite payment.")
 		return
 	}
