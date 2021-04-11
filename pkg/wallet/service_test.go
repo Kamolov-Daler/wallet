@@ -186,6 +186,10 @@ func TestService_Repeat_success(t *testing.T) {
 		t.Errorf("Repeat(): can't repeat pay = %v", err)
 		return
 	}
+	if repeatPay.ID == payment.ID {
+		t.Errorf("repeat payment ID is not payment ID = %v", repeatPay)
+		return
+	}
 	if repeatPay.Amount != payment.Amount {
 		t.Errorf("repeat payment amount is not payment amount = %v", repeatPay)
 		return

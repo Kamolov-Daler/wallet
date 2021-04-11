@@ -149,5 +149,5 @@ func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
 		Status:    types.PaymentStatusInProgress,
 	}
 	s.payments = append(s.payments, newPayment)
-	return payment, nil
+	return newPayment, nil
 }
