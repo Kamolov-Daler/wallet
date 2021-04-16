@@ -2,6 +2,10 @@ package wallet
 
 import (
 	"errors"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -201,4 +205,85 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	}
 	s.payments = append(s.payments, payment)
 	return payment, nil
+}
+
+func (s *Service) ExportToFile(path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			log.Print(cerr)
+		}
+	}()
+
+	for _, account := range s.accounts {
+		text := strconv.FormatInt(int64(account.ID), 10) + ";" + string(account.Phone) + ";" + strconv.FormatInt(int64(account.Balance), 10) + "|"
+		if err != nil {
+			log.Print(err)
+			return err
+		}
+		_, err = file.Write([]byte(text))
+
+		if err != nil {
+			log.Print(err)
+			return err
+		}
+	}
+	return err
+}
+
+func (s *Service) ImportFromFile(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Print(err)
+		}
+	}()
+
+	buf := make([]byte, 4096)
+
+	read, err := file.Read(buf)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	data := string(buf[:read])
+	split := strings.Split(data, "|")
+
+	for _, val := range split {
+		arrSplit := strings.Split(val, ";")
+		if arrSplit[0] == "" {
+			break
+		}
+		newID, err := strconv.Atoi(arrSplit[0])
+		if err != nil {
+			return err
+		}
+
+		if arrSplit[2] == "" {
+			break
+		}
+		newBalance, err := strconv.Atoi(arrSplit[2])
+		if err != nil {
+			return err
+		}
+		acc := &types.Account{
+			ID:      int64(newID),
+			Phone:   types.Phone(arrSplit[1]),
+			Balance: types.Money(newBalance),
+		}
+		s.accounts = append(s.accounts, acc)
+	}
+
+	return nil
 }
